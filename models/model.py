@@ -18,7 +18,6 @@ class FCN(nn.Module):
             current_dim = hidden_dim
         self.linears.append(nn.Linear(current_dim, output_dim))
 
-
     def forward(self, x):
         for layer in self.linears[:-1]:
             x = self.relu(layer(x))

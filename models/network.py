@@ -23,6 +23,11 @@ class Network():
         grads = torch.cat(grads)
         return grads
 
+    def apply_gradient(self, grads):
+        for i, param in enumerate(self.model.parameters()):
+            param.grad = grads[i]
+        return
+
     def get_model_weight(self):
         weights = []
         for param in self.model.parameters():
