@@ -4,19 +4,6 @@ import torchvision.datasets as dset
 import torchvision.transforms as T
 import torchvision.transforms.functional as TF
 
-import importlib
-
-
-class ConcatDataset(Dataset):
-    def __init__(self, *datasets):
-        self.datasets = datasets
-
-    def __getitem__(self, i):
-        return tuple(d[i] for d in self.datasets)
-
-    def __len__(self):
-        return min(len(d) for d in self.datasets)
-
 
 class Mnist(Dataset):
     def __init__(self, root, train=True):
@@ -45,12 +32,3 @@ class RandPermMnist(Mnist):
         data = torch.flatten(data)
         data = data[self.perm]
         return data
-
-
-if __name__ == "__main__":
-    root = "./"
-    MyClass = getattr(importlib.import_module("dataset"), "RandPermMnist")
-    d = MyClass(root)
-    data, label = d[10]
-    print(data)
-    print(label)

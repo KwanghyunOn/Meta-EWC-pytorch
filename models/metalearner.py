@@ -1,33 +1,39 @@
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
+from .utils import ConcatDataset
 
 
-class MetaLearner():
-    def __init__(self, main_net, meta_net, alpha):
+class MetaLearner:
+    def __init__(self, main_net, meta_net, config, device=None):
         self.main_net = main_net
         self.meta_net = meta_net
-        self.alpha = alpha
+        self.config = config
+        if device is None:
+            self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        else:
+            self.device = device
 
     def train(self, data_sequence):
         n = len(data_sequence)
-        for meta_epoch in range(num_epochs_meta):
+        for meta_epoch in range(self.config.num_epochs_meta):
             for i in range(1, n):
-                prev_data_loader = DataLoader(dataset=data_sequence[i-1], batch_size=batch_size, shuffle=True)
+                prev_data_loader = DataLoader(dataset=data_sequence[i-1], batch_size=self.config.batch_size,
+                                              shuffle=True)
                 self.main_net.train(prev_data_loader)
 
                 prev_grads = self.main_net.abs_sum_of_gradient(prev_data_loader)
                 prev_weights = self.main_net.get_model_weight()
-                joint_data_loader = DataLoader(dataset=MyDataset(data_sequence[i-1], data_sequence[i]),
-                                               batch_size=batch_size,
+                joint_data_loader = DataLoader(dataset=ConcatDataset(data_sequence[i-1], data_sequence[i]),
+                                               batch_size=self.config.batch_size,
                                                shuffle=True)
 
-                for main_epoch in range(num_epochs_main):
-                   for inputs, labels in joint_data_loader:
-                        inputs = inputs.to(device)
-                        labels = labels.to(device)
-                        prev_inputs, cur_inputs = inputs
-                        prev_labels, cur_labels = labels
+                for main_epoch in range(self.config.num_epochs_main):
+                    for prev_data, cur_data in joint_data_loader:
+                        prev_inputs, prev_labels = prev_data
+                        cur_inputs, cur_labels = cur_data
+                        for v in [prev_inputs, cur_inputs, prev_labels, cur_labels]:
+                            v = v.to(self.device)
                         joint_inputs = torch.cat((prev_inputs, cur_inputs), dim=0)
                         joint_labels = torch.cat((prev_labels, cur_labels), dim=0)
 
@@ -39,7 +45,7 @@ class MetaLearner():
 
                         # update main network with modified gradient
                         imp = self.meta_net.model(meta_inputs)
-                        cur_grads = self.alpha * imp * (cur_weights - prev_weights)
+                        cur_grads = self.config.alpha * imp * (cur_weights - prev_weights)
                         self.main_net.apply_gradient(cur_grads)
                         self.main_net.optimizer.step()
 
