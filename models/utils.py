@@ -2,7 +2,7 @@ import importlib
 from torch.utils.data.dataset import Dataset
 
 
-class DataSequence():
+class DataSequenceProducer:
     def __init__(self, class_name, module_name):
         self.data_class = getattr(importlib.import_module(module_name), class_name)
 

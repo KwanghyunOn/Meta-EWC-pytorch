@@ -89,6 +89,6 @@ class Network:
             labels = labels.to(self.device)
             outputs = self.model(inputs)
             pred = outputs.argmax(1)
-            correct += (pred==labels).float().sum()
+            correct += (pred == labels).float().sum()
             total += inputs.size(0)
-        print(f"{correct}/{total} correct, acc:{correct/total:.3f}")
+        return correct / total
