@@ -10,7 +10,8 @@ class MetricTracker:
         return self.acc_matrix[-1].mean()
 
     def total_avg_acc(self):
-        return self.acc_matrix.mean()
+        n_total = self.n_task * (self.n_task + 1) / 2.0
+        return self.acc_matrix.sum() / n_total
 
     def final_forget(self):
         idx = torch.arange(self.n_task)
