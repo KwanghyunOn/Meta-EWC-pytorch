@@ -7,7 +7,7 @@ import torchvision.transforms.functional as TF
 
 class Mnist(Dataset):
     def __init__(self, root, train=True):
-        self.dataset = dset.MNIST(root, train=train)
+        self.dataset = dset.MNIST(root, train=train, download=True)
 
     def __getitem__(self, index):
         img, label = self.dataset[index]
