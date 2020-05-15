@@ -23,9 +23,12 @@ class Mnist(Dataset):
 
 
 class RandPermMnist(Mnist):
-    def __init__(self, root, train=True):
+    def __init__(self, root, train=True, perm=None):
         super().__init__(root, train)
-        self.perm = torch.randperm(28*28)
+        if perm is None:
+            self.perm = torch.randperm(28*28)
+        else:
+            self.perm = perm
 
     def transform(self, img):
         data = TF.to_tensor(img)

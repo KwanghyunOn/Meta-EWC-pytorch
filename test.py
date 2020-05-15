@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
-from datasets import *
-from models import *
+from datasets import dataset
+from models import metalearner, model, network
 import config
 from models.utils import DataSequenceProducer
 from metrics.metric import MetricTracker
@@ -26,9 +26,11 @@ if __name__ == "__main__":
     opt_meta = torch.optim.SGD(meta_model.parameters(), lr=0.01, momentum=0.9)
     meta_net = network.Network(meta_model, loss_meta, opt_meta)
 
-    seq_producer = DataSequenceProducer("RandPermMnist", "datasets.dataset")
-    train_data_sequence = seq_producer.create_list(5, "./datasets/", train=True)
-    test_data_sequence = seq_producer.create_list(5, "./datasets/", train=True)
+    seq_len = 5
+    perms = [torch.randperm(28*28) for _ in range(seq_len)]
+    root = "./datasets/"
+    train_data_sequence = [dataset.RandPermMnist(root, train=True, perm=perms[i]) for i in range(seq_len)]
+    test_data_sequence = [dataset.RandPermMnist(root, train=False, perm=perms[i]) for i in range(seq_len)]
 
     ml = metalearner.MetaLearner(main_net, meta_net, config=config.MetaLearnerConfig)
     ml.train(train_data_sequence)
