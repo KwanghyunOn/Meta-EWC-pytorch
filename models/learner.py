@@ -4,6 +4,31 @@ from torch.utils.data import DataLoader
 from .utils import ConcatDataset
 
 
+class BaseLearner:
+    def __init__(self, main_net, meta_net, config, device=None):
+        self.main_net = main_net
+        self.acc_matrix = None
+        self.config = config
+        if device is None:
+            self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        else:
+            self.device = device
+
+    def test(self, data_sequence):
+        n = len(data_sequence)
+        self.acc_matrix = torch.zeros(n, n)
+        for i in range(1, n):
+            data_loader = DataLoader(dataset=data_sequence[i], batch_size=self.config.batch_size, shuffle=True)
+            for main_epoch in range(self.config.num_epochs_per_task):
+                self.main_net.train(data_loader)
+
+            for j in range(i+1):
+                self.acc_matrix[i][j] = self.main_net.test(DataLoader(dataset=data_sequence[j],
+                                                                      batch_size=self.config.batch_size,
+                                                                      shuffle=True))
+
+
+
 class MetaLearner:
     def __init__(self, main_net, meta_net, config, device=None):
         self.main_net = main_net
