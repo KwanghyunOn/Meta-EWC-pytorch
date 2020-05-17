@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from datasets import dataset
-from models import metalearner, model, network
+from models import learner, model, network
 import config
 from models.utils import DataSequenceProducer
 from metrics.metric import MetricTracker
@@ -32,7 +32,7 @@ if __name__ == "__main__":
     train_data_sequence = [dataset.RandPermMnist(root, train=True, perm=perms[i]) for i in range(seq_len)]
     test_data_sequence = [dataset.RandPermMnist(root, train=False, perm=perms[i]) for i in range(seq_len)]
 
-    ml = metalearner.MetaLearner(main_net, meta_net, config=config.MetaLearnerConfig)
+    ml = learner.MetaLearner(main_net, meta_net, config=config.MetaLearnerConfig)
     ml.train(train_data_sequence)
     ml.test(test_data_sequence)
 
