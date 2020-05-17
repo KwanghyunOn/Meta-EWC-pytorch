@@ -5,7 +5,7 @@ from .utils import ConcatDataset
 
 
 class BaseLearner:
-    def __init__(self, main_net, meta_net, config, device=None):
+    def __init__(self, main_net, config, device=None):
         self.main_net = main_net
         self.acc_matrix = None
         self.config = config
