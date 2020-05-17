@@ -24,7 +24,7 @@ if __name__ == "__main__":
 
     loss_meta = nn.MSELoss()
     opt_meta = torch.optim.SGD(meta_model.parameters(), lr=0.01, momentum=0.9)
-    meta_net = network.Network(meta_model, loss_meta, opt_meta)
+    meta_net = network.Network(meta_model, loss_meta, opt_meta, log_dir="logs/exp1")
 
     seq_len = 5
     perms = [torch.randperm(28*28) for _ in range(seq_len)]

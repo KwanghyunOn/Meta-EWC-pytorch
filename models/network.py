@@ -1,13 +1,21 @@
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
+from torch.utils.tensorboard import SummaryWriter
 
 
 class Network:
-    def __init__(self, model, loss_fn, optimizer, device=None):
+    def __init__(self, model, loss_fn, optimizer, log_dir=None, device=None):
         self.model = model
         self.loss_fn = loss_fn
         self.optimizer = optimizer
+        
+        if log_dir is None:
+            self.writer = None
+        else:
+            self.writer = SummaryWriter(log_dir=log_dir)
+        self.n_iter = 0
+
         if device is None:
             self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         else:
@@ -72,6 +80,9 @@ class Network:
         labels = labels.to(self.device)
         outputs = self.model(inputs)
         loss = self.loss_fn(outputs, labels)
+        if self.writer is not None:
+            self.writer.add_scalar("Loss/train", loss, self.n_iter)
+            self.n_iter += 1
 
         self.optimizer.zero_grad()
         loss.backward()
