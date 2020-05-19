@@ -17,7 +17,7 @@ class BaseLearner:
     def test(self, train_data_sequence, test_data_sequence):
         n = len(train_data_sequence)
         self.acc_matrix = torch.zeros(n, n)
-        for i in range(1, n):
+        for i in range(n):
             train_data_loader = DataLoader(dataset=train_data_sequence[i], batch_size=self.config.batch_size, shuffle=True)
             for main_epoch in range(self.config.num_epochs_per_task):
                 self.main_net.train(train_data_loader)
