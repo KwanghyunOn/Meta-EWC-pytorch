@@ -13,13 +13,14 @@ if __name__ == "__main__":
     opt_main = torch.optim.SGD(main_model.parameters(), lr=0.01, momentum=0.9)
     main_net = network.Network(main_model, loss_main, opt_main, log_dir="logs/exp1/base")
 
+    root = "./datasets/"
     seq_len = 5
     perms = [torch.randperm(28*28) for _ in range(seq_len)]
-    root = "./datasets/"
+    train_data_sequence = [dataset.RandPermMnist(root, train=True, perm=perms[i]) for i in range(seq_len)]
     test_data_sequence = [dataset.RandPermMnist(root, train=False, perm=perms[i]) for i in range(seq_len)]
 
     bl = learner.BaseLearner(main_net, config=config.BaseLearnerConfig)
-    bl.test(test_data_sequence)
+    bl.test(train_data_sequence, test_data_sequence)
 
     print(bl.acc_matrix)
     mt = MetricTracker(bl.acc_matrix)

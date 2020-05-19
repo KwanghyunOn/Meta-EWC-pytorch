@@ -14,16 +14,15 @@ class BaseLearner:
         else:
             self.device = device
 
-    def test(self, data_sequence):
-        n = len(data_sequence)
+    def test(self, train_data_sequence, test_data_sequence):
+        n = len(train_data_sequence)
         self.acc_matrix = torch.zeros(n, n)
         for i in range(1, n):
-            data_loader = DataLoader(dataset=data_sequence[i], batch_size=self.config.batch_size, shuffle=True)
+            train_data_loader = DataLoader(dataset=train_data_sequence[i], batch_size=self.config.batch_size, shuffle=True)
             for main_epoch in range(self.config.num_epochs_per_task):
-                self.main_net.train(data_loader)
-
+                self.main_net.train(train_data_loader)
             for j in range(i+1):
-                self.acc_matrix[i][j] = self.main_net.test(DataLoader(dataset=data_sequence[j],
+                self.acc_matrix[i][j] = self.main_net.test(DataLoader(dataset=test_data_sequence[j],
                                                                       batch_size=self.config.batch_size,
                                                                       shuffle=True))
 
@@ -74,11 +73,11 @@ class MetaLearner:
                         self.main_net.optimizer.step()
                         self.meta_net.train_single_batch(meta_inputs, joint_grads)
 
-    def test(self, data_sequence):
-        n = len(data_sequence)
+    def test(self, train_data_sequence, test_data_sequence):
+        n = len(train_data_sequence)
         self.acc_matrix = torch.zeros(n, n)
         for i in range(1, n):
-            prev_data_loader = DataLoader(dataset=data_sequence[i-1], batch_size=self.config.batch_size,
+            prev_data_loader = DataLoader(dataset=train_data_sequence[i-1], batch_size=self.config.batch_size,
                                           shuffle=True)
             if i == 1:
                 self.main_net.train(prev_data_loader)
@@ -86,7 +85,7 @@ class MetaLearner:
 
             prev_grads = self.main_net.abs_sum_of_gradient(prev_data_loader)
             prev_weights = self.main_net.get_model_weight()
-            cur_data_loader = DataLoader(dataset=data_sequence[i], batch_size=self.config.batch_size,
+            cur_data_loader = DataLoader(dataset=train_data_sequence[i], batch_size=self.config.batch_size,
                                          shuffle=True)
 
             for main_epoch in range(self.config.num_epochs_per_task):
@@ -103,6 +102,6 @@ class MetaLearner:
                     self.main_net.optimizer.step()
 
             for j in range(i+1):
-                self.acc_matrix[i][j] = self.main_net.test(DataLoader(dataset=data_sequence[j],
+                self.acc_matrix[i][j] = self.main_net.test(DataLoader(dataset=test_data_sequence[j],
                                                                       batch_size=self.config.batch_size,
                                                                       shuffle=True))
