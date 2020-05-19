@@ -4,6 +4,7 @@ from torch.utils.data import DataLoader
 from .utils import ConcatDataset
 
 
+
 class BaseLearner:
     def __init__(self, main_net, config, device=None):
         self.main_net = main_net
@@ -27,6 +28,7 @@ class BaseLearner:
                                                                       shuffle=True))
 
 
+
 class EWCLearner:
     def __init__(self, main_net, config, device=None):
         self.main_net = main_net
@@ -37,20 +39,22 @@ class EWCLearner:
         else:
             self.device = device
 
-    def test(self, data_sequence):
-        n = len(data_sequence)
+    def test(self, train_data_sequence, test_data_sequence):
+        n = len(train_data_sequence)
         self.acc_matrix = torch.zeros(n, n)
-        for i in range(1, n):
-            prev_data_loader = DataLoader(dataset=data_sequence[i-1], batch_size=self.config.batch_size,
-                                          shuffle=True)
-            if i == 1:
-                self.main_net.train(prev_data_loader)
-                self.acc_matrix[0][0] = self.main_net.test(prev_data_loader)
 
-            prev_grads = self.main_net.abs_sum_of_gradient(prev_data_loader)
-            prev_weights = self.main_net.get_model_weight()
-            cur_data_loader = DataLoader(dataset=data_sequence[i], batch_size=self.config.batch_size,
+        self.main_net.train(DataLoader(dataset=train_data_sequence[0], batch_size=self.config.batch_size, shuffle=True))
+        self.acc_matrix[0][0] = self.main_net.test(DataLoader(dataset=test_data_sequence[0],
+                                                              batch_size=self.config.batch_size,
+                                                              shuffle=True))
+        for i in range(1, n):
+            prev_data_loader = DataLoader(dataset=train_data_sequence[i-1], batch_size=self.config.batch_size,
+                                          shuffle=True)
+            cur_data_loader = DataLoader(dataset=train_data_sequence[i], batch_size=self.config.batch_size,
                                          shuffle=True)
+            prev_grads = self.main_net.compute_avg_gradient(prev_data_loader)
+            prev_weights = self.main_net.get_model_weight()
+            imp = torch.abs(prev_grads)
 
             for main_epoch in range(self.config.num_epochs_per_task):
                 for cur_inputs, cur_labels in cur_data_loader:
@@ -58,17 +62,16 @@ class EWCLearner:
                         v = v.to(self.device)
                     cur_grads = self.main_net.compute_gradient(cur_inputs, cur_labels)
                     cur_weights = self.main_net.get_model_weight()
-                    meta_inputs = torch.cat((prev_grads, cur_grads, cur_weights), dim=0)
-
-                    imp = self.meta_net.model(meta_inputs)
                     cur_grads += self.config.alpha * imp * (cur_weights - prev_weights)
                     self.main_net.apply_gradient(cur_grads)
                     self.main_net.optimizer.step()
+                    self.main_net.compute_loss(cur_inputs, cur_labels)
 
             for j in range(i+1):
-                self.acc_matrix[i][j] = self.main_net.test(DataLoader(dataset=data_sequence[j],
+                self.acc_matrix[i][j] = self.main_net.test(DataLoader(dataset=test_data_sequence[j],
                                                                       batch_size=self.config.batch_size,
                                                                       shuffle=True))
+
 
 
 class MetaLearner:
@@ -119,13 +122,14 @@ class MetaLearner:
     def test(self, train_data_sequence, test_data_sequence):
         n = len(train_data_sequence)
         self.acc_matrix = torch.zeros(n, n)
+
+        self.main_net.train(DataLoader(dataset=train_data_sequence[0], batch_size=self.config.batch_size, shuffle=True))
+        self.acc_matrix[0][0] = self.main_net.test(DataLoader(dataset=test_data_sequence[0],
+                                                              batch_size=self.config.batch_size,
+                                                              shuffle=True))
         for i in range(1, n):
             prev_data_loader = DataLoader(dataset=train_data_sequence[i-1], batch_size=self.config.batch_size,
                                           shuffle=True)
-            if i == 1:
-                self.main_net.train(prev_data_loader)
-                self.acc_matrix[0][0] = self.main_net.test(prev_data_loader)
-
             prev_grads = self.main_net.abs_sum_of_gradient(prev_data_loader)
             prev_weights = self.main_net.get_model_weight()
             cur_data_loader = DataLoader(dataset=train_data_sequence[i], batch_size=self.config.batch_size,
