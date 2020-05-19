@@ -11,6 +11,7 @@ class BaseLearnerConfig(Config):
     num_epochs_per_task = 1
 
 class MetaLearnerConfig(Config):
+    seq_len = 10
     batch_size = 256
     alpha = 0.1
     num_epochs_meta = 1
