@@ -36,7 +36,7 @@ if __name__ == "__main__":
     with result_path.open(mode='w') as fw:
         mt = MetricTracker(bl.acc_matrix)
         print(bl.acc_matrix, file=fw)
-        print(mt.final_avg_acc(), file=fw)
-        print(mt.total_avg_acc(), file=fw)
-        print(mt.final_forget(), file=fw)
-        print(mt.total_forget(), file=fw)
+        print("final average accuracy: ", mt.final_avg_acc(), file=fw)
+        print("total average accuracy: ", mt.total_avg_acc(), file=fw)
+        print("final forget: ", mt.final_forget(), file=fw)
+        print("total forget: ", mt.total_forget(), file=fw)
