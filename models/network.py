@@ -39,6 +39,12 @@ class Network:
         grads = torch.cat(grads)
         return grads
 
+    def compute_avg_gradient(self, data_loader):
+        grads_list = []
+        for inputs, labels in data_loader:
+            grads_list.append(self.compute_gradient(inputs, labels))
+        return torch.mean(torch.stack(grads_list))
+
     def apply_gradient(self, grads):
         idx = 0
         for param in self.model.parameters():
@@ -87,6 +93,17 @@ class Network:
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
+
+    def compute_loss(self, inputs, labels):
+        self.model.eval()
+        inputs = inputs.to(self.device)
+        labels = labels.to(self.device)
+        outputs = self.model(inputs)
+        loss = self.loss_fn(outputs, labels)
+        if self.writer is not None:
+            self.writer.add_scalar("Loss/train", loss, self.n_iter)
+            self.n_iter += 1
+        return loss
 
     def train(self, data_loader):
         for inputs, labels in data_loader:
