@@ -2,28 +2,41 @@ import torch
 import torch.nn as nn
 from datasets import dataset
 from models import learner, model, network
-import config
 from models.utils import DataSequenceProducer
 from metrics.metric import MetricTracker
+import config
+
+from pathlib import Path
+import shutil
 
 
 if __name__ == "__main__":
+    cfg = config.BaseLearnerConfig()
+    log_dir = Path(cfg.log_dir)
+    if log_dir.exists() and log_dir.is_dir():
+        shutil.rmtree(cfg.log_dir)
+        log_dir.mkdir()
+    result_path = Path(cfg.result_path)
+    if not result_path.parent.exists():
+        result_path.parent.mkdir()
+
     main_model = model.FCN(28*28, 10, [100])
     loss_main = nn.CrossEntropyLoss()
     opt_main = torch.optim.SGD(main_model.parameters(), lr=0.01, momentum=0.9)
-    main_net = network.Network(main_model, loss_main, opt_main, log_dir="logs/exp1/base")
+    main_net = network.Network(main_model, loss_main, opt_main, log_dir=cfg.log_dir)
 
-    seq_len = 5
+    seq_len = cfg.seq_len
     perms = [torch.randperm(28*28) for _ in range(seq_len)]
-    root = "./datasets/"
-    test_data_sequence = [dataset.RandPermMnist(root, train=False, perm=perms[i]) for i in range(seq_len)]
+    train_data_sequence = [dataset.RandPermMnist(cfg.data_dir, train=True, perm=perms[i]) for i in range(seq_len)]
+    test_data_sequence = [dataset.RandPermMnist(cfg.data_dir, train=False, perm=perms[i]) for i in range(seq_len)]
 
-    bl = learner.BaseLearner(main_net, config=config.BaseLearnerConfig)
-    bl.test(test_data_sequence)
+    bl = learner.BaseLearner(main_net, config=cfg)
+    bl.test(train_data_sequence, test_data_sequence)
 
-    print(bl.acc_matrix)
-    mt = MetricTracker(bl.acc_matrix)
-    print(mt.final_avg_acc())
-    print(mt.total_avg_acc())
-    print(mt.final_forget())
-    print(mt.total_forget())
+    with result_path.open(mode='w') as fw:
+        mt = MetricTracker(bl.acc_matrix)
+        print(bl.acc_matrix, file=fw)
+        print("final average accuracy: ", mt.final_avg_acc(), file=fw)
+        print("total average accuracy: ", mt.total_avg_acc(), file=fw)
+        print("final forget: ", mt.final_forget(), file=fw)
+        print("total forget: ", mt.total_forget(), file=fw)
