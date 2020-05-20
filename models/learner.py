@@ -15,7 +15,9 @@ class BaseLearner:
         else:
             self.device = device
 
+
     def test(self, train_data_sequence, test_data_sequence):
+        self.main_net.set_writer(self.config.writer, self.config.log_dir)
         n = len(train_data_sequence)
         self.acc_matrix = torch.zeros(n, n)
         for i in range(n):
@@ -39,7 +41,9 @@ class EWCLearner:
         else:
             self.device = device
 
+
     def test(self, train_data_sequence, test_data_sequence):
+        self.main_net.set_writer(self.config.writer, self.config.log_dir)
         n = len(train_data_sequence)
         self.acc_matrix = torch.zeros(n, n)
 
@@ -76,8 +80,8 @@ class EWCLearner:
 
 class MetaLearner:
     def __init__(self, main_net, meta_net, config, device=None):
-        self.main_net = main_net
         self.meta_net = meta_net
+        self.main_net = main_net
         self.acc_matrix = None
         self.config = config
         if device is None:
@@ -85,15 +89,18 @@ class MetaLearner:
         else:
             self.device = device
 
+
     def train(self, data_sequence):
+        self.meta_net.set_writer(self.config.meta_train_writer, self.config.log_dir)
+        self.main_net.set_writer(self.config.main_train_writer, self.config.log_dir)
         n = len(data_sequence)
+
+        self.main_net.train(DataLoader(dataset=data_sequence[0], batch_size=self.config.batch_size, shuffle=True))
         for meta_epoch in range(self.config.num_epochs_meta):
             for i in range(1, n):
                 prev_data_loader = DataLoader(dataset=data_sequence[i-1], batch_size=self.config.batch_size,
                                               shuffle=True)
-                self.main_net.train(prev_data_loader)
-
-                prev_grads = self.main_net.abs_sum_of_gradient(prev_data_loader)
+                prev_grads = self.main_net.compute_avg_gradient(prev_data_loader)
                 prev_weights = self.main_net.get_model_weight()
                 joint_data_loader = DataLoader(dataset=ConcatDataset(data_sequence[i-1], data_sequence[i]),
                                                batch_size=self.config.batch_size,
@@ -118,8 +125,11 @@ class MetaLearner:
                         self.main_net.apply_gradient(cur_grads)
                         self.main_net.optimizer.step()
                         self.meta_net.train_single_batch(meta_inputs, joint_grads)
+                        self.main_net.compute_loss(cur_inputs, cur_labels)
+
 
     def test(self, train_data_sequence, test_data_sequence):
+        self.main_net.set_writer(self.config.main_test_writer, self.config.log_dir)
         n = len(train_data_sequence)
         self.acc_matrix = torch.zeros(n, n)
 
@@ -147,6 +157,7 @@ class MetaLearner:
                     cur_grads += self.config.alpha * imp * (cur_weights - prev_weights)
                     self.main_net.apply_gradient(cur_grads)
                     self.main_net.optimizer.step()
+                    self.main_net.compute_loss(cur_inputs, cur_labels)
 
             for j in range(i+1):
                 self.acc_matrix[i][j] = self.main_net.test(DataLoader(dataset=test_data_sequence[j],

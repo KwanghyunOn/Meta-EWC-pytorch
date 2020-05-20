@@ -5,15 +5,13 @@ from torch.utils.tensorboard import SummaryWriter
 
 
 class Network:
-    def __init__(self, model, loss_fn, optimizer, log_dir=None, device=None):
+    def __init__(self, model, loss_fn, optimizer, device=None):
         self.model = model
         self.loss_fn = loss_fn
         self.optimizer = optimizer
         
-        if log_dir is None:
-            self.writer = None
-        else:
-            self.writer = SummaryWriter(log_dir=log_dir)
+        self.writer = None
+        self.writer_name = None
         self.n_iter = 0
 
         if device is None:
@@ -23,6 +21,12 @@ class Network:
 
         self.model.to(self.device)
         self.num_params = sum(p.numel() for p in self.model.parameters())
+
+    def set_writer(self, writer_name, log_dir):
+        if writer_name is not None:
+            self.writer = SummaryWriter(log_dir=log_dir)
+            self.writer_name = writer_name
+            self.n_iter = 0
 
     def compute_gradient(self, inputs, labels):
         self.model.train()
@@ -43,7 +47,7 @@ class Network:
         grads_list = []
         for inputs, labels in data_loader:
             grads_list.append(self.compute_gradient(inputs, labels))
-        return torch.mean(torch.stack(grads_list))
+        return torch.mean(torch.stack(grads_list), dim=0)
 
     def apply_gradient(self, grads):
         idx = 0
@@ -87,7 +91,7 @@ class Network:
         outputs = self.model(inputs)
         loss = self.loss_fn(outputs, labels)
         if self.writer is not None:
-            self.writer.add_scalar("Loss/train", loss, self.n_iter)
+            self.writer.add_scalar(self.writer_name, loss, self.n_iter)
             self.n_iter += 1
 
         self.optimizer.zero_grad()
@@ -101,7 +105,7 @@ class Network:
         outputs = self.model(inputs)
         loss = self.loss_fn(outputs, labels)
         if self.writer is not None:
-            self.writer.add_scalar("Loss/train", loss, self.n_iter)
+            self.writer.add_scalar(self.writer_name, loss, self.n_iter)
             self.n_iter += 1
         return loss
 
