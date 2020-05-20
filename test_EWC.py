@@ -23,7 +23,7 @@ if __name__ == "__main__":
     main_model = model.FCN(28*28, 10, [100])
     loss_main = nn.CrossEntropyLoss()
     opt_main = torch.optim.SGD(main_model.parameters(), lr=0.01, momentum=0.9)
-    main_net = network.Network(main_model, loss_main, opt_main, log_dir=cfg.log_dir)
+    main_net = network.Network(main_model, loss_main, opt_main)
 
     seq_len = cfg.seq_len
     perms = [torch.randperm(28*28) for _ in range(seq_len)]

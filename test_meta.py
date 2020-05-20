@@ -35,10 +35,12 @@ if __name__ == "__main__":
 
     loss_meta = nn.MSELoss()
     opt_meta = torch.optim.SGD(meta_model.parameters(), lr=0.01, momentum=0.9)
-    meta_net = network.Network(meta_model, loss_meta, opt_meta, log_dir=cfg.log_dir)
+    meta_net = network.Network(meta_model, loss_meta, opt_meta)
 
     seq_len = cfg.seq_len
+    meta_perms = [torch.randperm(28*28) for _ in range(seq_len)]
     perms = [torch.randperm(28*28) for _ in range(seq_len)]
+    # meta_train_data_sequence = [dataset.RandPermMnist(cfg.data_dir, train=True, perm=meta_perms[i]) for i in range(seq_len)]
     meta_train_data_sequence = [dataset.RandPermMnist(cfg.data_dir, train=True, perm=perms[i]) for i in range(seq_len)]
     train_data_sequence = [dataset.RandPermMnist(cfg.data_dir, train=True, perm=perms[i]) for i in range(seq_len)]
     test_data_sequence = [dataset.RandPermMnist(cfg.data_dir, train=False, perm=perms[i]) for i in range(seq_len)]
