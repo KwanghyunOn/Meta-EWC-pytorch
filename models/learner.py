@@ -58,7 +58,7 @@ class EWCLearner:
                                          shuffle=True)
             prev_grads = self.main_net.compute_avg_gradient(prev_data_loader)
             prev_weights = self.main_net.get_model_weight()
-            imp = torch.abs(prev_grads)
+            imp = prev_grads ** 2
 
             for main_epoch in range(self.config.num_epochs_per_task):
                 for cur_inputs, cur_labels in cur_data_loader:
