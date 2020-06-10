@@ -11,7 +11,7 @@ import shutil
 
 
 if __name__ == "__main__":
-    cfg = config.BaseLearnerConfig()
+    cfg = config.BaseJointLearnerConfig()
     log_dir = Path(cfg.log_dir)
     if log_dir.exists() and log_dir.is_dir():
         shutil.rmtree(cfg.log_dir)
