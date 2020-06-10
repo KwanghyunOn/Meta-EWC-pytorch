@@ -46,6 +46,7 @@ if __name__ == "__main__":
 
     ml = learner.MetaLearner(main_net, meta_net, config=cfg)
     ml.train(meta_train_data_sequence)
+    ml.main_net.model = model.FCN(28*28, 10, [100])     # reset main model
     ml.test(train_data_sequence, test_data_sequence)
 
     with result_path.open(mode='w') as fw:
