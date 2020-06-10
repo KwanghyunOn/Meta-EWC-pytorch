@@ -31,6 +31,36 @@ class BaseLearner:
 
 
 
+class BaseJointLearner:
+    def __init__(self, main_net, config, device=None):
+        self.main_net = main_net
+        self.acc_matrix = None
+        self.config = config
+        if device is None:
+            self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        else:
+            self.device = device
+
+
+    def test(self, train_data_sequence, test_data_sequence):
+        self.main_net.set_writer(self.config.writer, self.config.log_dir)
+        n = len(train_data_sequence)
+        self.acc_matrix = torch.zeros(n, n)
+
+        joint_dataset = ConcatDataset(train_data_sequence)
+        joint_data_loader = DataLoader(dataset=joint_dataset, batch_size=self.config.batch_size, shuffle=True)
+        for main_epoch in range(self.config.num_epoch):
+            self.main_net.train(joint_data_loader)
+
+        for i in range(n):
+            acc = self.main_net.test(DataLoader(dataset=test_data_sequence[j],
+                                                batch_size=self.config.batch_size,
+                                                shuffle=True))
+            for j in range(i+1):
+                self.acc_matrix[i][j] = acc
+
+
+
 class EWCLearner:
     def __init__(self, main_net, config, device=None):
         self.main_net = main_net

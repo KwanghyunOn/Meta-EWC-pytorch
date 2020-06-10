@@ -10,6 +10,14 @@ class BaseLearnerConfig(Config):
     log_dir = "logs/exp1/base/"
     result_path = "results/exp1/base.txt"
 
+class BaseJointLearnerConfig(Config):
+    seq_len = 10
+    batch_size = 256
+    num_epochs = 1
+    writer = "Loss/train-main"
+    log_dir = "logs/exp1/base_joint/"
+    result_path = "results/exp1/base_joint.txt"
+
 class EWCLearnerConfig(Config):
     seq_len = 10
     batch_size = 256
