@@ -26,6 +26,7 @@ class MetaLearnerConfig(Config):
     num_epochs_meta = 1
     num_epochs_main = 1
     num_epochs_per_task = 1
+    num_warmup = 1
     meta_train_writer = "Loss/train-meta"
     main_train_writer = "Loss/train-main"
     main_test_writer = "Loss/test-main"

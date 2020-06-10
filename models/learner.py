@@ -129,15 +129,21 @@ class MetaLearner:
                         self.main_net.compute_loss(cur_inputs, cur_labels)
 
 
-    def test(self, train_data_sequence, test_data_sequence):
+    def test(self, train_data_sequence, test_data_sequence, meta_warmup=False):
         self.main_net.set_writer(self.config.main_test_writer, self.config.log_dir)
+
         n = len(train_data_sequence)
         self.acc_matrix = torch.zeros(n, n)
+        self.meta_net.model.eval()
+        self.main_net.model.train()
 
         self.main_net.train(DataLoader(dataset=train_data_sequence[0], batch_size=self.config.batch_size, shuffle=True))
         self.acc_matrix[0][0] = self.main_net.test(DataLoader(dataset=test_data_sequence[0],
                                                               batch_size=self.config.batch_size,
                                                               shuffle=True))
+        if meta_warmup:
+            meta_state_dict = self.meta_net.model.state_dict()
+
         for i in range(1, n):
             prev_data_loader = DataLoader(dataset=train_data_sequence[i-1], batch_size=self.config.batch_size,
                                           shuffle=True)
@@ -145,6 +151,21 @@ class MetaLearner:
             prev_weights = self.main_net.get_model_weight()
             cur_data_loader = DataLoader(dataset=train_data_sequence[i], batch_size=self.config.batch_size,
                                          shuffle=True)
+
+            if meta_warmup:
+                self.meta_net.model.train()
+                cur_inputs, cur_labels = cur_data_loader[0]
+                cur_grads = self.main_net.compute_gradient(cur_inputs, cur_labels)
+                cur_weights = self.main_net.get_model_weight()
+                pseudo_joint_grads = (prev_grads + cur_grads) / 2.0
+                
+                meta_inputs = torch.cat((prev_grads, cur_grads, cur_weights), dim=0)
+                meta_outputs = (pseudo_joint_grads - cur_grads) / (self.config.alpha * (cur_weights - prev_weights))
+                for _ in self.config.num_warmup:
+                    self.meta_net.train_single_batch(meta_inputs, meta_outputs)
+                
+                self.meta_net.model.load_state_dict(meta_state_dict)
+                self.meta_net.model.eval()
 
             for main_epoch in range(self.config.num_epochs_per_task):
                 for cur_inputs, cur_labels in cur_data_loader:
