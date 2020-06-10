@@ -119,12 +119,13 @@ class MetaLearner:
                         joint_grads = self.main_net.compute_gradient(joint_inputs, joint_labels)
                         cur_weights = self.main_net.get_model_weight()
                         meta_inputs = torch.cat((prev_grads, cur_grads, cur_weights), dim=0)
+                        meta_outputs = (joint_grads - cur_grads) / (self.config.alpha * (cur_weights - prev_weights))
 
                         imp = self.meta_net.model(meta_inputs)
                         cur_grads += self.config.alpha * imp * (cur_weights - prev_weights)
                         self.main_net.apply_gradient(cur_grads)
                         self.main_net.optimizer.step()
-                        self.meta_net.train_single_batch(meta_inputs, joint_grads)
+                        self.meta_net.train_single_batch(meta_inputs, meta_outputs)
                         self.main_net.compute_loss(cur_inputs, cur_labels)
 
 
