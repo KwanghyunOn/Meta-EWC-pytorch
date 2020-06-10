@@ -49,7 +49,7 @@ class BaseJointLearner:
 
         joint_dataset = ConcatDataset(train_data_sequence)
         joint_data_loader = DataLoader(dataset=joint_dataset, batch_size=self.config.batch_size, shuffle=True)
-        for main_epoch in range(self.config.num_epoch):
+        for main_epoch in range(self.config.num_epochs_per_task):
             self.main_net.train(joint_data_loader)
 
         for i in range(n):
@@ -60,6 +60,35 @@ class BaseJointLearner:
                 self.acc_matrix[i][j] = acc
 
 
+
+class BaseMultimodelLearner:
+    def __init__(self, main_nets, config, device=None):
+        self.main_nets = main_nets
+        self.acc_matrix = None
+        self.config = config
+        if device is None:
+            self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        else:
+            self.device = device
+
+
+    def test(self, train_data_sequence, test_data_sequence):
+        n = len(train_data_sequence)
+        self.acc_matrix = torch.zeros(n, n)
+        for i in range(n):
+            self.main_nets[i].set_writer(self.config.writer, self.config.log_dir)
+            if i > 0:
+                self.main_nets[i].n_iter = self.main_nets[i-1].n_iter + 1
+
+            train_data_loader = DataLoader(dataset=train_data_sequence[i], batch_size=self.config.batch_size, shuffle=True)
+            for main_epoch in range(self.config.num_epochs_per_task):
+                self.main_nets[i].train(train_data_loader)
+            for j in range(i+1):
+                self.acc_matrix[i][j] = self.main_nets[i].test(DataLoader(dataset=test_data_sequence[j],
+                                                                        batch_size=self.config.batch_size,
+                                                                        shuffle=True))
+
+    
 
 class EWCLearner:
     def __init__(self, main_net, config, device=None):

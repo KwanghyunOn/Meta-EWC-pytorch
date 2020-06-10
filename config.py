@@ -13,10 +13,18 @@ class BaseLearnerConfig(Config):
 class BaseJointLearnerConfig(Config):
     seq_len = 10
     batch_size = 256
-    num_epochs = 1
+    num_epochs_per_task = 1
     writer = "Loss/train-main"
     log_dir = "logs/exp1/base_joint/"
     result_path = "results/exp1/base_joint.txt"
+
+class BaseMultimodelLearnerConfig(Config):
+    seq_len = 10
+    batch_size = 256
+    num_epochs_per_task = 1
+    writer = "Loss/train-main"
+    log_dir = "logs/exp1/base_multimodel/"
+    result_path = "results/exp1/base_multimodel.txt"
 
 class EWCLearnerConfig(Config):
     seq_len = 10
