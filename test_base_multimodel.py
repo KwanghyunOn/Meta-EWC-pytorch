@@ -20,17 +20,16 @@ if __name__ == "__main__":
     if not result_path.parent.exists():
         result_path.parent.mkdir()
 
-    main_model = model.FCN(28*28, 10, [100])
     loss_main = nn.CrossEntropyLoss()
     opt_main = torch.optim.SGD(main_model.parameters(), lr=0.01)
-    main_net = network.Network(main_model, loss_main, opt_main)
+    main_nets = [network.Network(model.FCN(28*28, 10, [100]), loss_main, opt_main) for _ in range(seq_len)]
 
     seq_len = cfg.seq_len
     perms = [torch.randperm(28*28) for _ in range(seq_len)]
     train_data_sequence = [dataset.RandPermMnist(cfg.data_dir, train=True, perm=perms[i]) for i in range(seq_len)]
     test_data_sequence = [dataset.RandPermMnist(cfg.data_dir, train=False, perm=perms[i]) for i in range(seq_len)]
 
-    bl = learner.BaseMultimodelLearner(main_net, config=cfg)
+    bl = learner.BaseMultimodelLearner(main_nets, config=cfg)
     bl.test(train_data_sequence, test_data_sequence)
 
     with result_path.open(mode='w') as fw:
