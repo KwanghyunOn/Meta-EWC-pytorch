@@ -30,18 +30,17 @@ if __name__ == "__main__":
         p_meta += param.data.nelement()
 
     loss_main = nn.CrossEntropyLoss()
-    opt_main = torch.optim.SGD(main_model.parameters(), lr=0.01, momentum=0.9)
+    opt_main = torch.optim.SGD(main_model.parameters(), lr=0.01)
     main_net = network.Network(main_model, loss_main, opt_main)
 
     loss_meta = nn.MSELoss()
-    opt_meta = torch.optim.SGD(meta_model.parameters(), lr=0.01, momentum=0.9)
+    opt_meta = torch.optim.SGD(meta_model.parameters(), lr=0.01)
     meta_net = network.Network(meta_model, loss_meta, opt_meta)
 
     seq_len = cfg.seq_len
     meta_perms = [torch.randperm(28*28) for _ in range(seq_len)]
     perms = [torch.randperm(28*28) for _ in range(seq_len)]
-    # meta_train_data_sequence = [dataset.RandPermMnist(cfg.data_dir, train=True, perm=meta_perms[i]) for i in range(seq_len)]
-    meta_train_data_sequence = [dataset.RandPermMnist(cfg.data_dir, train=True, perm=perms[i]) for i in range(seq_len)]
+    meta_train_data_sequence = [dataset.RandPermMnist(cfg.data_dir, train=True, perm=meta_perms[i]) for i in range(seq_len)]
     train_data_sequence = [dataset.RandPermMnist(cfg.data_dir, train=True, perm=perms[i]) for i in range(seq_len)]
     test_data_sequence = [dataset.RandPermMnist(cfg.data_dir, train=False, perm=perms[i]) for i in range(seq_len)]
 

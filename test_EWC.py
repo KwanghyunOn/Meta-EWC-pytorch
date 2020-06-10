@@ -22,7 +22,7 @@ if __name__ == "__main__":
 
     main_model = model.FCN(28*28, 10, [100])
     loss_main = nn.CrossEntropyLoss()
-    opt_main = torch.optim.SGD(main_model.parameters(), lr=0.01, momentum=0.9)
+    opt_main = torch.optim.SGD(main_model.parameters(), lr=0.01)
     main_net = network.Network(main_model, loss_main, opt_main)
 
     seq_len = cfg.seq_len
