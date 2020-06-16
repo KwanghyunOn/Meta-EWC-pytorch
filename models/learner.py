@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader
-from .utils import ConcatDataset
+from torch.utils.data import DataLoader, ConcatDataset
+from .utils import JointDataset
 
 
 
@@ -47,16 +47,16 @@ class BaseJointLearner:
         n = len(train_data_sequence)
         self.acc_matrix = torch.zeros(n, n)
 
-        joint_dataset = ConcatDataset(train_data_sequence)
-        joint_data_loader = DataLoader(dataset=joint_dataset, batch_size=self.config.batch_size, shuffle=True)
+        train_dataset = ConcatDataset(train_data_sequence)
+        train_data_loader = DataLoader(dataset=train_dataset, batch_size=self.config.batch_size, shuffle=True)
         for main_epoch in range(self.config.num_epochs_per_task):
-            self.main_net.train(joint_data_loader)
+            self.main_net.train(train_data_loader)
 
-        for i in range(n):
+        for j in range(n):
             acc = self.main_net.test(DataLoader(dataset=test_data_sequence[j],
                                                 batch_size=self.config.batch_size,
                                                 shuffle=True))
-            for j in range(i+1):
+            for i in range(j, n):
                 self.acc_matrix[i][j] = acc
 
 
@@ -161,7 +161,7 @@ class MetaLearner:
                                               shuffle=True)
                 prev_grads = self.main_net.compute_avg_gradient(prev_data_loader)
                 prev_weights = self.main_net.get_model_weight()
-                joint_data_loader = DataLoader(dataset=ConcatDataset(data_sequence[i-1], data_sequence[i]),
+                joint_data_loader = DataLoader(dataset=JointDataset(data_sequence[i-1], data_sequence[i]),
                                                batch_size=self.config.batch_size,
                                                shuffle=True)
 
@@ -178,10 +178,11 @@ class MetaLearner:
                         joint_grads = self.main_net.compute_gradient(joint_inputs, joint_labels)
                         cur_weights = self.main_net.get_model_weight()
                         meta_inputs = torch.cat((prev_grads, cur_grads, cur_weights), dim=0)
-                        meta_outputs = (joint_grads - cur_grads) / (self.config.alpha * (cur_weights - prev_weights))
+                        # meta_outputs = (joint_grads - cur_grads) / (self.config.alpha * torch.clamp(cur_weights - prev_weights, min=self.config.eps))
+                        meta_outputs = joint_grads ** 2
 
                         imp = self.meta_net.model(meta_inputs)
-                        cur_grads += self.config.alpha * imp * (cur_weights - prev_weights)
+                        # cur_grads += self.config.alpha * imp * (cur_weights - prev_weights)
                         self.main_net.apply_gradient(cur_grads)
                         self.main_net.optimizer.step()
                         self.meta_net.train_single_batch(meta_inputs, meta_outputs)
@@ -206,10 +207,10 @@ class MetaLearner:
         for i in range(1, n):
             prev_data_loader = DataLoader(dataset=train_data_sequence[i-1], batch_size=self.config.batch_size,
                                           shuffle=True)
-            prev_grads = self.main_net.abs_sum_of_gradient(prev_data_loader)
-            prev_weights = self.main_net.get_model_weight()
             cur_data_loader = DataLoader(dataset=train_data_sequence[i], batch_size=self.config.batch_size,
                                          shuffle=True)
+            prev_grads = self.main_net.compute_avg_gradient(prev_data_loader)
+            prev_weights = self.main_net.get_model_weight()
 
             if meta_warmup:
                 self.meta_net.model.train()
@@ -219,7 +220,7 @@ class MetaLearner:
                 pseudo_joint_grads = (prev_grads + cur_grads) / 2.0
                 
                 meta_inputs = torch.cat((prev_grads, cur_grads, cur_weights), dim=0)
-                meta_outputs = (pseudo_joint_grads - cur_grads) / (self.config.alpha * (cur_weights - prev_weights))
+                meta_outputs = (pseudo_joint_grads - cur_grads) / (self.config.alpha * torch.clamp(cur_weights - prev_weights, min=self.config.eps))
                 for _ in self.config.num_warmup:
                     self.meta_net.train_single_batch(meta_inputs, meta_outputs)
                 
@@ -233,9 +234,10 @@ class MetaLearner:
                     cur_grads = self.main_net.compute_gradient(cur_inputs, cur_labels)
                     cur_weights = self.main_net.get_model_weight()
                     meta_inputs = torch.cat((prev_grads, cur_grads, cur_weights), dim=0)
-
                     imp = self.meta_net.model(meta_inputs)
                     cur_grads += self.config.alpha * imp * (cur_weights - prev_weights)
+                    # joint_grads = self.meta_net.model(meta_inputs)
+                    # self.main_net.apply_gradient(joint_grads)
                     self.main_net.apply_gradient(cur_grads)
                     self.main_net.optimizer.step()
                     self.main_net.compute_loss(cur_inputs, cur_labels)

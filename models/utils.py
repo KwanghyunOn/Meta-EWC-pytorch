@@ -13,7 +13,7 @@ class DataSequenceProducer:
         return data_list
 
 
-class ConcatDataset(Dataset):
+class JointDataset(Dataset):
     def __init__(self, *datasets):
         self.datasets = datasets
 

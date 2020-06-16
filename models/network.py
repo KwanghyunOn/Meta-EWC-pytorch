@@ -9,6 +9,7 @@ class Network:
         self.model = model
         self.loss_fn = loss_fn
         self.optimizer = optimizer
+        self.model_dict = self.model.state_dict()
         
         self.writer = None
         self.writer_name = None
@@ -21,6 +22,9 @@ class Network:
 
         self.model.to(self.device)
         self.num_params = sum(p.numel() for p in self.model.parameters())
+
+    def reset_model(self):
+        self.model.load_state_dict(self.model_dict)
 
     def set_writer(self, writer_name, log_dir):
         if writer_name is not None:

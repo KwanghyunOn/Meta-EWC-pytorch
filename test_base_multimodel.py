@@ -20,14 +20,15 @@ if __name__ == "__main__":
     if not result_path.parent.exists():
         result_path.parent.mkdir()
 
+    n = cfg.seq_len
+    main_models = [model.FCN(28*28, 10, [100]) for _ in range(n)]
     loss_main = nn.CrossEntropyLoss()
-    opt_main = torch.optim.SGD(main_model.parameters(), lr=0.01)
-    main_nets = [network.Network(model.FCN(28*28, 10, [100]), loss_main, opt_main) for _ in range(seq_len)]
+    opt_mains = [torch.optim.SGD(main_models[i].parameters(), lr=cfg.lr) for i in range(n)]
+    main_nets = [network.Network(main_models[i], loss_main, opt_mains[i]) for i in range(n)]
 
-    seq_len = cfg.seq_len
-    perms = [torch.randperm(28*28) for _ in range(seq_len)]
-    train_data_sequence = [dataset.RandPermMnist(cfg.data_dir, train=True, perm=perms[i]) for i in range(seq_len)]
-    test_data_sequence = [dataset.RandPermMnist(cfg.data_dir, train=False, perm=perms[i]) for i in range(seq_len)]
+    perms = [torch.randperm(28*28) for _ in range(n)]
+    train_data_sequence = [dataset.RandPermMnist(cfg.data_dir, train=True, perm=perms[i]) for i in range(n)]
+    test_data_sequence = [dataset.RandPermMnist(cfg.data_dir, train=False, perm=perms[i]) for i in range(n)]
 
     bl = learner.BaseMultimodelLearner(main_nets, config=cfg)
     bl.test(train_data_sequence, test_data_sequence)

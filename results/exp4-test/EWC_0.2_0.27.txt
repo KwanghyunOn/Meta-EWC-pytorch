@@ -1,0 +1,4 @@
+final average acc: 0.846, std: 0.011
+total average acc: 0.867, std: 0.009
+final forget: 0.087, std: 0.013
+total forget: 0.069, std: 0.013
