@@ -178,8 +178,11 @@ class MetaLearner:
                         joint_grads = self.main_net.compute_gradient(joint_inputs, joint_labels)
                         cur_weights = self.main_net.get_model_weight()
                         meta_inputs = torch.cat((prev_grads, cur_grads, cur_weights), dim=0)
-                        # meta_outputs = (joint_grads - cur_grads) / (self.config.alpha * torch.clamp(cur_weights - prev_weights, min=self.config.eps))
-                        meta_outputs = joint_grads ** 2
+                        weight_sign = torch.sign(cur_weights - prev_weights)
+                        weight_sign[weight_sign == 0] = 1
+                        weight_diff = weight_sign * torch.clamp(torch.abs(cur_weights - prev_weights), min=self.config.eps)
+                        meta_outputs = torch.abs((joint_grads - cur_grads) / (weight_diff))
+                        # meta_outputs = joint_grads ** 2
 
                         imp = self.meta_net.model(meta_inputs)
                         # cur_grads += self.config.alpha * imp * (cur_weights - prev_weights)
@@ -205,6 +208,7 @@ class MetaLearner:
             meta_state_dict = self.meta_net.model.state_dict()
 
         for i in range(1, n):
+            print(f"@@@@@@@@@@@ task {i} @@@@@@@@@@@")
             prev_data_loader = DataLoader(dataset=train_data_sequence[i-1], batch_size=self.config.batch_size,
                                           shuffle=True)
             cur_data_loader = DataLoader(dataset=train_data_sequence[i], batch_size=self.config.batch_size,
@@ -234,7 +238,9 @@ class MetaLearner:
                     cur_grads = self.main_net.compute_gradient(cur_inputs, cur_labels)
                     cur_weights = self.main_net.get_model_weight()
                     meta_inputs = torch.cat((prev_grads, cur_grads, cur_weights), dim=0)
+                    print("meta input: ", prev_grads, cur_grads, cur_weights)
                     imp = self.meta_net.model(meta_inputs)
+                    print("imp: ", imp)
                     cur_grads += self.config.alpha * imp * (cur_weights - prev_weights)
                     # joint_grads = self.meta_net.model(meta_inputs)
                     # self.main_net.apply_gradient(joint_grads)

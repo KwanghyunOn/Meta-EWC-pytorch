@@ -47,7 +47,7 @@ class MetaLearnerConfig(Config):
         self.lr_main = lr_main
         self.alpha = alpha
         self.eps = eps
-        self.seq_len = 10
+        self.seq_len = 3
         self.batch_size = 256
         self.num_epochs_meta = 1
         self.num_epochs_main = 1

@@ -29,7 +29,7 @@ if __name__ == "__main__":
 
     am, faa, taa, ff, tf = [], [], [], [], []
     for _ in range(int(args.n)):
-        main_model = model.FCN(28*28, 10, [100])
+        main_model = model.FCN(28*28, 10, [50, 50])
         loss_main = nn.CrossEntropyLoss()
         opt_main = torch.optim.SGD(main_model.parameters(), lr=cfg.lr)
         main_net = network.Network(main_model, loss_main, opt_main)

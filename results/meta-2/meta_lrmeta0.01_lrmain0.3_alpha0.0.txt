@@ -1,0 +1,9 @@
+lr_meta = 0.010, lr_main = 0.300, alpha = 0.000, eps = 0.500000
+batch size = 256, seq len = 3, exp num = 1
+tensor([[0.8864, 0.0000, 0.0000],
+        [0.8435, 0.9247, 0.0000],
+        [0.7034, 0.7405, 0.9044]])
+final average acc: 0.783, std: nan
+total average acc: 0.834, std: nan
+final forget: 0.184, std: nan
+total forget: 0.137, std: nan

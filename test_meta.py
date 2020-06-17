@@ -13,10 +13,10 @@ import argparse
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--lr_meta', default=0.1)
-    parser.add_argument('--lr_main', default=0.1)
+    parser.add_argument('--lr_meta', default=0.01)
+    parser.add_argument('--lr_main', default=0.3)
     parser.add_argument('--alpha', default=0.1)
-    parser.add_argument('--eps', default=1e-3)
+    parser.add_argument('--eps', default=0.5)
     parser.add_argument('--n', default=1)
     parser.add_argument('--name', required=True)
     args = parser.parse_args()
@@ -32,12 +32,12 @@ if __name__ == "__main__":
 
     am, faa, taa, ff, tf = [], [], [], [], []
     for _ in range(int(args.n)):
-        main_model = model.FCN(28*28, 10, [100])
+        main_model = model.FCN(28*28, 10, [50, 50])
         p = 0
         for param in main_model.parameters():
             p += param.data.nelement()
 
-        meta_model = model.FCN(3*p, p, [100])
+        meta_model = model.FCN(3*p, p, [40, 40, 40])
         p_meta = 0
         for param in meta_model.parameters():
             p_meta += param.data.nelement()
